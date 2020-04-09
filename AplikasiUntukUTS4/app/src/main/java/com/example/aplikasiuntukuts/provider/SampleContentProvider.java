@@ -24,16 +24,11 @@ import java.util.concurrent.Callable;
 public class SampleContentProvider extends ContentProvider {
 
     public static final String AUTHORITY = "com.example.aplikasiuntukuts.contentprovidersample.provider";
-
     public static final Uri URI_CHEESE = Uri.parse(
             "content://" + AUTHORITY + "/" + Cheese.TABLE_NAME);
-
     private static final int CODE_CHEESE_DIR = 1;
-
     private static final int CODE_CHEESE_ITEM = 2;
-
     private static final UriMatcher MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
-
     static {
         MATCHER.addURI(AUTHORITY, Cheese.TABLE_NAME, CODE_CHEESE_DIR);
         MATCHER.addURI(AUTHORITY, Cheese.TABLE_NAME + "/*", CODE_CHEESE_ITEM);
@@ -43,7 +38,6 @@ public class SampleContentProvider extends ContentProvider {
     public boolean onCreate() {
         return true;
     }
-
     @Nullable
     @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection,
@@ -107,13 +101,28 @@ public class SampleContentProvider extends ContentProvider {
         return 0;
     }
 
+
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection,
                       @Nullable String[] selectionArgs) {
-        return 0;
+        switch (MATCHER.match(uri)) {
+            case CODE_CHEESE_DIR:
+                throw new IllegalArgumentException("Invalid URI, cannot update without ID" + uri);
+            case CODE_CHEESE_ITEM:
+                final Context context = getContext();
+                if (context == null) {
+                    return 0;
+                }
+                final Cheese cheese = Cheese.fromContentValues(values);
+                cheese.setId(ContentUris.parseId(uri));
+                final int count = SampleDatabase.getInstance(context).cheese()
+                        .update(cheese);
+                context.getContentResolver().notifyChange(uri, null);
+                return count;
+            default:
+                throw new IllegalArgumentException("Unknown URI: " + uri);
+        }
     }
-
-
     @NonNull
     @Override
     public ContentProviderResult[] applyBatch(
@@ -131,7 +140,6 @@ public class SampleContentProvider extends ContentProvider {
             }
         });
     }
-
     @Override
     public int bulkInsert(@NonNull Uri uri, @NonNull ContentValues[] valuesArray) {
     return 0;

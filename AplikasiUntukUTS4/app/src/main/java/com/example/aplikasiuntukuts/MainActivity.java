@@ -15,13 +15,13 @@
  */
 
 package com.example.aplikasiuntukuts;
-
+import androidx.lifecycle.ViewModelProvider;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
+import androidx.lifecycle.Observer;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,11 +30,18 @@ import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
+import android.content.Intent;
 import com.example.aplikasiuntukuts.data.Cheese;
+import com.example.aplikasiuntukuts.data.CheeseViewModel;
+import com.example.aplikasiuntukuts.data.WordListAdapter;
 import com.example.aplikasiuntukuts.provider.SampleContentProvider;
+import android.view.View;
+import android.widget.Toast;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.util.ArrayList;
+import java.util.List;
 /**
  * Not very relevant to Room. This just shows data from {@link SampleContentProvider}.
  *
@@ -43,21 +50,55 @@ import com.example.aplikasiuntukuts.provider.SampleContentProvider;
  */
 public class MainActivity extends AppCompatActivity {
 
+    private CheeseViewModel mWordViewModel;
+    public static final int NEW_WORD_ACTIVITY_REQUEST_CODE = 1;
+
     private static final int LOADER_CHEESES = 1;
 
-    private CheeseAdapter mCheeseAdapter;
+    private WordListAdapter mCheeseAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final RecyclerView list = findViewById(R.id.list);
-        list.setLayoutManager(new LinearLayoutManager(list.getContext()));
-        mCheeseAdapter = new CheeseAdapter();
-        list.setAdapter(mCheeseAdapter);
+        final RecyclerView recyclerView = findViewById(R.id.recyclerview);
+        final WordListAdapter adapter = new WordListAdapter(this);
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        LoaderManager.getInstance(this).initLoader(LOADER_CHEESES, null, mLoaderCallbacks);
+        mWordViewModel = new ViewModelProvider(this).get(CheeseViewModel.class);
+
+        mWordViewModel.getAllWords().observe(this, new Observer<List<Cheese>>() {
+            @Override
+            public void onChanged(@Nullable final List<Cheese> words) {
+                // Update the cached copy of the words in the adapter.
+                adapter.setWords(words);
+            }
+        });
+
+        FloatingActionButton fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, NewWordActivity.class);
+                startActivityForResult(intent, NEW_WORD_ACTIVITY_REQUEST_CODE);
+            }
+        });
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == NEW_WORD_ACTIVITY_REQUEST_CODE && resultCode == RESULT_OK) {
+            Cheese word = new Cheese(data.getStringExtra(NewWordActivity.EXTRA_REPLY));
+            mWordViewModel.insert(word);
+        } else {
+            Toast.makeText(
+                    getApplicationContext(),
+                    R.string.empty_not_saved,
+                    Toast.LENGTH_LONG).show();
+        }
     }
 
     private final LoaderManager.LoaderCallbacks<Cursor> mLoaderCallbacks =
@@ -73,57 +114,28 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 @Override
-                public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
-                    mCheeseAdapter.setCheeses(data);
+                public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+                    ArrayList<Cheese> data = new ArrayList<>();
+
+                    do {
+                        // Read the values of a row in the table using the indexes acquired above
+                        final long id = cursor.getLong(cursor.getColumnIndex(Cheese.COLUMN_ID));
+                        final String name = cursor.getString(cursor.getColumnIndex(Cheese.COLUMN_NAME));
+
+                        data.add(new Cheese(id, name));
+
+                    } while (cursor.moveToNext());
+
+                    mCheeseAdapter.setWords(data);
                 }
 
                 @Override
                 public void onLoaderReset(@NonNull Loader<Cursor> loader) {
-                    mCheeseAdapter.setCheeses(null);
+                    mCheeseAdapter.setWords(null);
                 }
 
             };
 
-    private static class CheeseAdapter extends RecyclerView.Adapter<CheeseAdapter.ViewHolder> {
 
-        private Cursor mCursor;
-
-        @Override
-        @NonNull
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return new ViewHolder(parent);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            if (mCursor.moveToPosition(position)) {
-                holder.mText.setText(mCursor.getString(
-                        mCursor.getColumnIndexOrThrow(Cheese.COLUMN_NAME)));
-            }
-        }
-
-        @Override
-        public int getItemCount() {
-            return mCursor == null ? 0 : mCursor.getCount();
-        }
-
-        void setCheeses(Cursor cursor) {
-            mCursor = cursor;
-            notifyDataSetChanged();
-        }
-
-        static class ViewHolder extends RecyclerView.ViewHolder {
-
-            final TextView mText;
-
-            ViewHolder(ViewGroup parent) {
-                super(LayoutInflater.from(parent.getContext()).inflate(
-                        android.R.layout.simple_list_item_1, parent, false));
-                mText = itemView.findViewById(android.R.id.text1);
-            }
-
-        }
-
-    }
 
 }

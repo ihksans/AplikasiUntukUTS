@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 
@@ -16,21 +17,51 @@ public class Cheese {
 
 
     public static final String TABLE_NAME = "cheeses";
-
-
     public static final String COLUMN_ID = BaseColumns._ID;
-
-
     public static final String COLUMN_NAME = "name";
-
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(index = true, name = COLUMN_ID)
-    public long id;
-
-
+    private long id;
     @ColumnInfo(name = COLUMN_NAME)
-    public String name;
+    private String name;
+
+//    @NonNull
+//    public static Cheese fromContentValues(@Nullable ContentValues values) {
+//        final Cheese cheese = new Cheese();
+//        if (values != null && values.containsKey(COLUMN_ID)) {
+//            cheese.id = values.getAsLong(COLUMN_ID);
+//        }
+//        if (values != null && values.containsKey(COLUMN_NAME)) {
+//            cheese.name = values.getAsString(COLUMN_NAME);
+//        }
+//        return cheese;
+//    }
+    public Cheese(@NonNull String name)
+    {
+        this.setName(name);
+    }
+//    public Cheese(@NonNull String name,@NonNull long id) {
+//        this.name = name;
+//        this.id = id;
+//    }
+
+    public String getCheese(){
+        return this.getName();
+    }
+    @Ignore
+    public Cheese(long id, String name){
+    }
+    public Cheese(){
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 
     @NonNull
     public static Cheese fromContentValues(@Nullable ContentValues values) {
@@ -39,12 +70,12 @@ public class Cheese {
             cheese.id = values.getAsLong(COLUMN_ID);
         }
         if (values != null && values.containsKey(COLUMN_NAME)) {
-            cheese.name = values.getAsString(COLUMN_NAME);
+            cheese.setName(values.getAsString(COLUMN_NAME));
         }
         return cheese;
     }
 
-
+    /** Dummy data. */
     static final String[] CHEESES = {
             "Abbaye de Belloc", "Abbaye du Mont des Cats", "Abertam", "Abondance", "Ackawi",
             "Acorn", "Adelost", "Affidelice au Chablis", "Afuega'l Pitu", "Airag", "Airedale",
@@ -178,4 +209,11 @@ public class Cheese {
             "Zamorano", "Zanetti Grana Padano", "Zanetti Parmigiano Reggiano"
     };
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 }

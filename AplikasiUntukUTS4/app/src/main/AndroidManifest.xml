@@ -14,7 +14,7 @@
         android:theme="@style/AppTheme">
 
 
-
+        <activity android:name=".NewWordActivity"></activity>
         <activity android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
@@ -22,14 +22,9 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
 
-        <provider
-            android:name=".provider.SampleContentProvider"
-            android:authorities="com.example.aplikasiuntukuts.contentprovidersample.provider"
-            android:enabled="true"
-            android:exported="true"
-            android:permission="com.example.android.aplikasiuntukuts.provider.READ_WRITE"/>
 
 
     </application>
